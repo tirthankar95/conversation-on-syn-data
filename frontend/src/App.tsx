@@ -63,7 +63,7 @@ function App() {
   return (
     <main className="page-wrap">
       <aside className="sidebar">
-        <h2 className="sidebar-title">Data Assistant</h2>
+        <h2 className="sidebar-title">Fake Data Generator</h2>
         <nav className="sidebar-nav" aria-label="Mode Switcher">
           <button
             type="button"
