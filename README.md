@@ -79,4 +79,4 @@ The end result should feel like a practical "talk to your database" assistant, e
 - Prefer deterministic intermediate formats (structured JSON) between components.
 - Keep SQL generation guarded with schema-aware constraints.
 - Add lightweight evaluation cases early (for both data quality and query quality).
-- Treat observability as a first-class feature, not a final add-on.
+- Treat observability as a first-class feature, not a final add-on.# conversation-on-syn-data
