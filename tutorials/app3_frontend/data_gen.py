@@ -1,0 +1,101 @@
+from app3_backend.langchain_backend import llm_generate
+
+def apply_row1(st):
+    # Row 1: Top Element
+    top_row = st.container(border=True)
+    with top_row:
+        prompt = st.text_input(
+            "Prompt",
+            placeholder="Enter your prompt here...",
+            help="Enter additional instructions which would go with the DDL schema to generate synthetic data."
+        )
+        
+        uploaded_file = st.file_uploader(
+            "Upload DDL Schema",
+            type=["ddl", "sql"],
+            key="ddl_upload",
+        )
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            temperature = st.slider("Temperature", 0.0, 1.0, 0.7)
+        with col2:
+            max_tokens = st.number_input(
+                "Max Tokens",
+                min_value=1,
+                value=65536,
+                key="gen_max_tokens"
+            )
+        
+        if st.button(
+            "Generate",
+            type="primary",
+            icon=":material/auto_awesome:",
+        ):
+            if not prompt.strip():
+                st.warning("Please enter a prompt.")
+                return
+
+            if uploaded_file is None:
+                st.warning("Please upload a DDL schema file.")
+                return
+
+            file_content = uploaded_file.read().decode("utf-8", errors="ignore")
+
+            if llm_generate(
+                prompt=prompt,
+                file_name=uploaded_file.name,
+                file_content=file_content,
+                temperature=temperature,
+                max_tokens=int(max_tokens),
+            ):
+                st.success("Dummy generate called successfully.")
+
+
+def apply_row2(st):
+    # Row 2: Bottom Element
+    bottom_row = st.container(border=True)
+    with bottom_row:
+        header, select_col = st.columns(2)
+        
+        available_files = [
+            "Select a file...",
+            "company_employee_schema.ddl",
+            "library_mgm_schema.ddl",
+            "restaurants_schema.ddl",
+        ]
+        
+        with header:
+            st.write("#### Data Preview")
+            
+        with select_col:
+            selected_file = st.selectbox(
+                "",
+                options=available_files,
+                index=0,
+                help="Choose a schema to inspect its generated contents.",
+            )
+            
+        st.divider()
+
+        if selected_file and selected_file != "Select a file...":
+            st.info(f"Displaying content preview for **{selected_file}**...")
+            
+            st.code(
+                f"""-- Sample Schema preview for {selected_file}
+CREATE TABLE users (
+    user_id SERIAL PRIMARY KEY,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    email VARCHAR(255) NOT NULL,
+    status VARCHAR(50) DEFAULT 'active'
+);""",
+                language="sql",
+            )
+        else:
+            st.text("No file selected.")
+
+
+def apply_data_gen(st):
+    apply_row1(st)
+    apply_row2(st)
+
