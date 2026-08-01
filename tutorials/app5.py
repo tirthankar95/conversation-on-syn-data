@@ -6,6 +6,7 @@ docker run -d \
   -p 5432:5432 \
   my-postgres
 
+docker start postgres-container
 docker exec -it postgres-container psql -U myuser -d mydb
 '''
 import subprocess

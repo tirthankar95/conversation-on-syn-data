@@ -1,4 +1,7 @@
-from app3_backend.langchain_backend import llm_generate
+from app6_backend.langchain_backend import llm_generate
+from app6_backend.database import SqlMachine
+
+sql_machine = SqlMachine()
 
 def apply_row1(st):
     # Row 1: Top Element
@@ -49,7 +52,9 @@ def apply_row1(st):
                 temperature=temperature,
                 max_tokens=int(max_tokens),
             ):
-                st.success("Dummy generate called successfully.")
+                st.success("Dummy generate called successfully.", icon="✅")
+            else:
+                st.error("Dummy generate failed. Please check the logs for more details.", icon="❌")
 
 
 def apply_row2(st):
@@ -59,11 +64,10 @@ def apply_row2(st):
         header, select_col = st.columns(2)
         
         available_files = [
-            "Select a file...",
-            "company_employee_schema.ddl",
-            "library_mgm_schema.ddl",
-            "restaurants_schema.ddl",
+            "Select a file..."
         ]
+        sql_machine_result = sql_machine.select_table_names()
+        available_files.extend(sql_machine_result)
         
         with header:
             st.write("#### Data Preview")
@@ -80,15 +84,9 @@ def apply_row2(st):
 
         if selected_file and selected_file != "Select a file...":
             st.info(f"Displaying content preview for **{selected_file}**...")
-            
+            result = sql_machine.run("SELECT * FROM public.\"TableNames\";")
             st.code(
-                f"""-- Sample Schema preview for {selected_file}
-CREATE TABLE users (
-    user_id SERIAL PRIMARY KEY,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    email VARCHAR(255) NOT NULL,
-    status VARCHAR(50) DEFAULT 'active'
-);""",
+                f"""{result}""",
                 language="sql",
             )
             st.chat_input("Query to modify the table entries...")
