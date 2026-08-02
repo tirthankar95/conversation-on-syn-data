@@ -14,22 +14,25 @@ class SqlMachine:
         create_table_sql = """
         CREATE TABLE IF NOT EXISTS public.\"TableNames\" (
             id TEXT PRIMARY KEY,
-            table_name TEXT NOT NULL UNIQUE
+            table_name TEXT NOT NULL UNIQUE,
+            schema TEXT
         );
         """
         self.run(create_table_sql)
     
-    def insert_table_name(self, table_name):
+    def insert_table_name(self, table_name, schema):
         insert_sql = f"""
-        INSERT INTO public.\"TableNames\" (id, table_name)
-        VALUES (gen_random_uuid()::text, '{table_name}')
+        INSERT INTO public.\"TableNames\" (id, table_name, schema)
+        VALUES (gen_random_uuid()::text, '{table_name}', '{schema}')
         ON CONFLICT (table_name) DO NOTHING;
         """
         self.run(insert_sql)
     
     def select_table_names(self):
-        select_sql = "SELECT * FROM public.\"TableNames\";"
+        select_sql = "SELECT id, table_name FROM public.\"TableNames\";"
         result = self.run(select_sql)
+        if not result:
+            return []
         parsed_result = []
         for line in result.splitlines():
             line = line.strip()
@@ -41,19 +44,26 @@ class SqlMachine:
     def run(self, sql_command):
         command = [
             "docker", "exec", "-i", "postgres-container",
-            "psql", "-U", "myuser", "-d", "mydb"
+            "psql", "-v", "ON_ERROR_STOP=1", "-X", "-U", "myuser", "-d", "mydb"
         ]
-        try:
-            result = subprocess.run(
-                command,
-                input=sql_command,
-                text=True,
-                capture_output=True,
-                check=True
-            )
+        result = subprocess.run(
+            command,
+            input=sql_command,
+            text=True,
+            capture_output=True,
+            check=False
+        )
+        if result.returncode != 0:
+            print("Error executing SQL command:")
+            print(sql_command)
+            print("stderr:", result.stderr)
+            raise Exception(f"SQL command failed with return code {result.returncode}\nstderr: {result.stderr}")
+
+        if result.stderr.strip():
+            # psql can emit warnings on stderr even when command succeeds.
+            print("psql warning:", result.stderr)
+
+        if result.stdout.strip():
             print("Query executed successfully!")
-            print("Output:", result.stdout)
-            return result.stdout
-        except subprocess.CalledProcessError as e:
-            print("Error executing command:", e.stderr)
-            return None
+            print("Output:\n", result.stdout)
+        return result.stdout

@@ -11,7 +11,8 @@ myLLM = ChatGoogleGenerativeAI(
 )
 
 class GenState(TypedDict):
-    nature: str
+    first_nature: str
+    second_nature: str
     prompt: str
     response: str
     cleaned_response: str
@@ -19,7 +20,7 @@ class GenState(TypedDict):
 class GenWorkflow:
     def _llm_response(self, state: GenState):
         prompts = [
-            SystemMessage(content=state['nature']),
+            SystemMessage(content=state['first_nature']),
             HumanMessage(content=state['prompt'])
         ]
         llm_response = myLLM.invoke(prompts)
@@ -28,31 +29,14 @@ class GenWorkflow:
     
     def _llm_clean_response(self, state: GenState):
         prompts = [
-            SystemMessage(content="""
-You are an SQL extraction engine.
-
-Extract only executable PostgreSQL SQL statements from the input.
-
-Requirements:
-- Output only SQL.
-- Remove all natural language.
-- Remove markdown code fences.
-- Remove labels such as "Here is the SQL:", "Explanation:", or "Analysis:".
-- Preserve semicolons.
-- Preserve statement order.
-- Do not invent or modify SQL.
-- Do not include comments.
-
-If no executable SQL exists, return exactly:
-NO_VALID_SQL
-"""),
+            SystemMessage(content=state['second_nature']),
             HumanMessage(content=state['response'])
         ]
         llm_response = myLLM.invoke(prompts)
         state['cleaned_response'] = llm_response.content.strip() if isinstance(llm_response, AIMessage) else str(llm_response).strip()
         return state
         
-    def __init__(self, prompt):
+    def __init__(self, prompt0, prompt1):
         gen_graph = StateGraph(GenState)
         gen_graph.add_node("response", self._llm_response)
         gen_graph.add_node("cleaned_response", self._llm_clean_response)
@@ -60,11 +44,13 @@ NO_VALID_SQL
         gen_graph.add_edge("response", "cleaned_response")
         gen_graph.add_edge("cleaned_response", END)
         self.gen_graph_flow = gen_graph.compile()
-        self.nature_change_prompt = prompt
+        self.nature_change_prompt0 = prompt0
+        self.nature_change_prompt1 = prompt1
 
     def workflow_response(self, prompt: str) -> str:
         state: GenState = {
-            "nature": self.nature_change_prompt, 
+            "first_nature": self.nature_change_prompt0,
+            "second_nature": self.nature_change_prompt1,
             "prompt": prompt, "response": "", 
             "cleaned_response": ""
         }

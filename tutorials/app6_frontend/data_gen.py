@@ -1,4 +1,7 @@
-from app6_backend.langchain_backend import llm_generate
+from app6_backend.langchain_backend import (
+    llm_generate,
+    llm_chat_with_data
+)
 from app6_backend.database import SqlMachine
 
 sql_machine = SqlMachine()
@@ -52,9 +55,9 @@ def apply_row1(st):
                 temperature=temperature,
                 max_tokens=int(max_tokens),
             ):
-                st.success("Dummy generate called successfully.", icon="✅")
+                st.toast("Dummy generate called successfully.", icon="✅")
             else:
-                st.error("Dummy generate failed. Please check the logs for more details.", icon="❌")
+                st.toast("Dummy generate failed. Please check the logs for more details.", icon="❌")
 
 
 def apply_row2(st):
@@ -84,12 +87,21 @@ def apply_row2(st):
 
         if selected_file and selected_file != "Select a file...":
             st.info(f"Displaying content preview for **{selected_file}**...")
-            result = sql_machine.run("SELECT * FROM public.\"TableNames\";")
+            result = sql_machine.run(f"SELECT * FROM {selected_file};")
             st.code(
                 f"""{result}""",
                 language="sql",
             )
-            st.chat_input("Query to modify the table entries...")
+            user_prompt = st.chat_input("Query to modify the table entries...")
+            if user_prompt:
+                if llm_chat_with_data(
+                    user_prompt=user_prompt,
+                    table_name=selected_file,
+                    history=[]
+                ):
+                    st.toast("Modification successful.", icon="✅")
+                else:
+                    st.toast("Try again with more detailed prompt.", icon="❌")
         else:
             st.text("No file selected.")
 

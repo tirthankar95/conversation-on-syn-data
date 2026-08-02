@@ -12,13 +12,17 @@ docker exec -it postgres-container psql -U myuser -d mydb
 import subprocess
 
 sql_command = """
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE IF NOT EXISTS user_tm (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     email VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 """
+
+# sql_command = """
+# SELECT * FROM user_tm;
+# """
 
 command = [
     "docker", "exec", "-i", "postgres-container",
@@ -34,6 +38,6 @@ try:
         check=True
     )
     print("Table created successfully!")
-    print("Output:", result.stdout)
+    print("Output:\n", result.stdout)
 except subprocess.CalledProcessError as e:
     print("Error executing command:", e.stderr)
